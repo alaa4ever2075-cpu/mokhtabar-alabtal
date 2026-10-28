@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مختبر الأبطال - كيمياء الصف التاسع</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Tahoma,Arial,sans-serif;
+  background:linear-gradient(135deg,#101b46,#176b87);
+  color:#fff;min-height:100vh;padding:18px;
+}
+.container{max-width:650px;margin:auto}
+header{text-align:center;padding:12px}
+header .icon{font-size:55px}
+h1{margin:8px 0;color:#ffe082}
+.subtitle{color:#d7efff;line-height:1.8}
+.panel{
+  background:#fff;color:#17324d;border-radius:22px;
+  padding:22px;margin:14px 0;
+  box-shadow:0 8px 25px #0003;
+}
+.info{display:flex;justify-content:space-between;gap:10px;
+font-weight:bold;color:#176b87}
+.progress{height:10px;background:#dce7ef;border-radius:10px;
+overflow:hidden;margin:15px 0}
+#bar{height:100%;width:0;background:#21b573;transition:.3s}
+#question{font-size:21px;line-height:1.8;margin:18px 0}
+.answers{display:grid;gap:10px}
+.answer{
+  width:100%;padding:14px;border:2px solid #d8e4ee;
+  border-radius:13px;background:#f7fbff;color:#17324d;
+  font-size:17px;text-align:right;cursor:pointer;
+}
+.answer:disabled{cursor:default}
+.answer.correct{background:#d7f8e5;border-color:#21a366}
+.answer.wrong{background:#ffe0e0;border-color:#dc4545}
+#feedback{font-weight:bold;line-height:1.8;margin-top:14px}
+button.main{
+  border:0;border-radius:13px;padding:14px 20px;
+  font-size:17px;font-weight:bold;cursor:pointer;
+  background:#ffca58;color:#17324d;width:100%;margin-top:15px;
+}
+button.main:disabled{opacity:.5}
+.small{text-align:center;font-size:13px;color:#d7efff;line-height:1.8}
+#result{text-align:center;display:none}
+#result .score{font-size:48px;color:#168b65;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="icon">🧪</div>
+  <h1>مختبر الأبطال</h1>
+  <div class="subtitle">لعبة تفاعلية في الكيمياء للصف التاسع<br>
+  هل أنت مستعد لتحدي العلماء؟</div>
+</header>
+
+<section class="panel" id="game">
+  <div class="info">
+    <span id="number">السؤال 1 من 8</span>
+    <span>⭐ النقاط: <span id="score">0</span></span>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+  <div id="question"></div>
+  <div class="answers" id="answers"></div>
+  <div id="feedback" aria-live="polite"></div>
+  <button class="main" id="next" disabled>السؤال التالي ←</button>
+</section>
+
+<section class="panel" id="result">
+  <div style="font-size:55px">🏆</div>
+  <h2>انتهى التحدي!</h2>
+  <p>نتيجتك النهائية:</p>
+  <div class="score" id="finalScore"></div>
+  <p id="message"></p>
+  <button class="main" onclick="restart()">🔄 العب مرة أخرى</button>
+</section>
+
+<p class="small">💡 فكّر جيدًا قبل اختيار الإجابة، وتعلّم من كل محاولة!</p>
+</div>
+
+<script>
+const questions = [
+ {q:"ما الحالات الأساسية للمادة؟",
+  a:["الصلبة والسائلة والغازية","الساخنة والباردة فقط","الخفيفة والثقيلة","الشفافة والمعتمة"],
+  c:0,e:"الحالات الأساسية للمادة هي الصلبة والسائلة والغازية."},
+ {q:"ماذا تسمى عملية تحول المادة من الحالة الصلبة إلى السائلة؟",
+  a:["التجمد","التكاثف","الانصهار","التسامي"],
+  c:2,e:"الانصهار هو تحول المادة من الحالة الصلبة إلى السائلة."},
+ {q:"ماذا يحدث للماء عند التجمد؟",
+  a:["يتحول إلى بخار","يتحول من سائل إلى صلب","يتحول من صلب إلى سائل","لا تتغير حالته"],
+  c:1,e:"التجمد هو تحول المادة من الحالة السائلة إلى الحالة الصلبة."},
+ {q:"ما العملية التي يتحول فيها السائل إلى غاز من سطحه؟",
+  a:["التكاثف","الانصهار","التجمد","التبخر"],
+  c:3,e:"التبخر يحدث من سطح السائل، ويمكن أن يحدث دون الوصول إلى درجة الغليان."},
+ {q:"ماذا يسمى تحول الغاز إلى سائل؟",
+  a:["التكاثف","التبخر","التجمد","الانصهار"],
+  c:0,e:"التكاثف هو تحول المادة من الحالة الغازية إلى الحالة السائلة."},
+ {q:"ماذا يحدث لجسيمات المادة عند تسخينها عادةً؟",
+  a:["تتوقف عن الحركة","تقل طاقتها الحركية","تزداد طاقتها الحركية","تختفي"],
+  c:2,e:"عند التسخين تزداد الطاقة الحركية لجسيمات المادة عادةً."},
+ {q:"أي حالة من حالات المادة لها حجم وشكل ثابتان؟",
+  a:["الغازية","الصلبة","السائلة","جميعها"],
+  c:1,e:"المادة الصلبة لها شكل ثابت وحجم ثابت."},
+ {q:"ما العملية التي تحدث عندما يتكون بخار الماء على سطح بارد على هيئة قطرات؟",
+  a:["التبخر","الانصهار","التكاثف","التجمد"],
+  c:2,e:"عندما يبرد بخار الماء ويتحول إلى قطرات سائلة تحدث عملية التكاثف."}
+];
+
+let index=0, score=0, answered=false;
+const $=id=>document.getElementById(id);
+
+function showQuestion(){
+  answered=false;
+  $("feedback").textContent="";
+  $("next").disabled=true;
+  $("next").textContent=index===questions.length-1?"عرض النتيجة 🏆":"السؤال التالي ←";
+  $("number").textContent=`السؤال ${index+1} من ${questions.length}`;
+  $("score").textContent=score;
+  $("bar").style.width=(index/questions.length*100)+"%";
+  const item=questions[index];
+  $("question").textContent=item.q;
+  $("answers").innerHTML="";
+  item.a.forEach((answer,i)=>{
+    const btn=document.createElement("button");
+    btn.className="answer";
+    btn.textContent=["أ) ","ب) ","ج) ","د) "][i]+answer;
+    btn.onclick=()=>choose(i,btn);
+    $("answers").appendChild(btn);
+  });
+}
+
+function choose(choice,button){
+  if(answered)return;
+  answered=true;
+  const item=questions[index];
+  document.querySelectorAll(".answer").forEach((btn,i)=>{
+    btn.disabled=true;
+    if(i===item.c)btn.classList.add("correct");
+  });
+  if(choice===item.c){
+    score++;
+    $("feedback").textContent="✅ إجابة صحيحة! "+item.e;
+    $("feedback").style.color="#168b65";
+  }else{
+    button.classList.add("wrong");
+    $("feedback").textContent="❌ ليست الإجابة الصحيحة. "+item.e;
+    $("feedback").style.color="#bd3434";
+  }
+  $("score").textContent=score;
+  $("bar").style.width=((index+1)/questions.length*100)+"%";
+  $("next").disabled=false;
+}
+
+$("next").onclick=()=>{
+  if(!answered)return;
+  index++;
+  if(index<questions.length){
+    showQuestion();
+  }else{
+    $("game").style.display="none";
+    $("result").style.display="block";
+    $("finalScore").textContent=score+" / "+questions.length;
+    $("bar").style.width="100%";
+    $("message").textContent=score===8
+      ?"ممتاز! أنت بطل المختبر 🥇"
+      :score>=5
+      ?"أحسنت! راجع الأسئلة التي أخطأت فيها وحاول مجددًا 🌟"
+      :"لا تستسلم! المراجعة والمحاولة تساعدانك على التقدم 💪";
+  }
+};
+
+function restart(){
+  index=0;score=0;
+  $("result").style.display="none";
+  $("game").style.display="block";
+  showQuestion();
+}
+showQuestion();
+</script>
+</body>
+</html>
